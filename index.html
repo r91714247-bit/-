@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Биржа Чипсов и Кока-Колы | Chips & Cola Index</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cola: {
+                            red: '#E41E2B',
+                            darkred: '#9E0B0F',
+                            glow: '#FF2E3D',
+                        },
+                        chips: {
+                            gold: '#FFC72C',
+                            darkgold: '#B8860B',
+                            glow: '#FFE066',
+                        },
+                        dark: {
+                            bg: '#0F0F13',
+                            card: '#181820',
+                            border: '#2A2A38'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tone.js for sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F0F13;
+            color: #F3F4F6;
+            overflow-x: hidden;
+        }
+
+        /* Neon Glow Utility Effects */
+        .glow-cola {
+            box-shadow: 0 0 15px rgba(228, 30, 43, 0.4);
+        }
+        .glow-chips {
+            box-shadow: 0 0 15px rgba(255, 199, 44, 0.4);
+        }
+        .text-glow-cola {
+            text-shadow: 0 0 8px rgba(228, 30, 43, 0.6);
+        }
+        .text-glow-chips {
+            text-shadow: 0 0 8px rgba(255, 199, 44, 0.6);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0F0F13;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2A2A38;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #E41E2B;
+        }
+
+        /* Pulse Animations */
+        @keyframes ticker-slide {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .animate-ticker {
+            display: inline-flex;
+            white-space: nowrap;
+            animation: ticker-slide 30s linear infinite;
+        }
+        .animate-ticker:hover {
+            animation-play-state: paused;
+        }
+    </style>
+</head>
+<body class="bg-dark-bg text-gray-100 flex flex-col min-h-screen">
+
+    <!-- TOP TICKER BAR -->
+    <div class="bg-dark-card border-b border-dark-border py-2 px-4 overflow-hidden text-xs flex items-center select-none">
+        <div class="flex items-center gap-2 font-bold text-cola-red mr-4 shrink-0 bg-dark-bg px-2 py-1 rounded border border-cola-red/30">
+            <i class="fa-solid font-bold fa-bolt animate-pulse"></i> LIVE TICKER:
+        </div>
+        <div class="overflow-hidden relative w-full">
+            <div class="animate-ticker flex items-center gap-8" id="tickerContent">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="sticky top-0 z-50 bg-dark-bg/90 backdrop-blur-md border-b border-dark-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cola-red to-chips-gold flex items-center justify-center shadow-lg font-black text-black text-xl tracking-tighter">
+                    <i class="fa-solid fa-arrow-trend-up text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg sm:text-xl tracking-tight leading-none bg-gradient-to-r from-cola-red via-white to-chips-gold bg-clip-text text-transparent">
+                        CHIPS & COLA INDEX
+                    </h1>
+                    <span class="text-[10px] text-gray-400 font-medium tracking-widest uppercase">Главная Биржа Вкуса</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center gap-1 bg-dark-card p-1 rounded-xl border border-dark-border text-sm">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="px-4 py-2 rounded-lg font-medium transition-all duration-200 bg-cola-red text-white shadow-md">
+                    <i class="fa-solid fa-chart-line mr-1.5"></i> Дашборд
+                </button>
+                <button onclick="switchTab('calculator')" id="nav-calculator" class="px-4 py-2 rounded-lg font-medium transition-all duration-200 text-gray-400 hover:text-white hover:bg-dark-border">
+                    <i class="fa-solid fa-calculator mr-1.5"></i> Конвертер
+                </button>
+                <button onclick="switchTab('trading')" id="nav-trading" class="px-4 py-2 rounded-lg font-medium transition-all duration-200 text-gray-400 hover:text-white hover:bg-dark-border">
+                    <i class="fa-solid fa-gamepad mr-1.5"></i> Трейдинг
+                </button>
+                <button onclick="switchTab('news')" id="nav-news" class="px-4 py-2 rounded-lg font-medium transition-all duration-200 text-gray-400 hover:text-white hover:bg-dark-border">
+                    <i class="fa-solid fa-newspaper mr-1.5"></i> Новости
+                </button>
+            </nav>
+
+            <!-- Wallet / Quick Stats -->
+            <div class="flex items-center gap-3">
+                <div class="bg-dark-card border border-dark-border px-3 py-1.5 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-wallet text-chips-gold"></i>
+                    <div class="text-xs">
+                        <div class="text-gray-400 text-[10px]">Баланс</div>
+                        <div class="font-bold text-chips-gold" id="userBalance">$10,000.00</div>
+                    </div>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg bg-dark-card border border-dark-border text-gray-300">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Drawer -->
+        <div id="mobileMenu" class="hidden md:hidden bg-dark-card border-b border-dark-border px-4 py-3 space-y-2">
+            <button onclick="switchTab('dashboard'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg font-medium text-white bg-cola-red flex items-center gap-2">
+                <i class="fa-solid fa-chart-line w-5"></i> Дашборд
+            </button>
+            <button onclick="switchTab('calculator'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg font-medium text-gray-300 hover:bg-dark-border flex items-center gap-2">
+                <i class="fa-solid fa-calculator w-5"></i> Конвертер
+            </button>
+            <button onclick="switchTab('trading'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg font-medium text-gray-300 hover:bg-dark-border flex items-center gap-2">
+                <i class="fa-solid fa-gamepad w-5"></i> Трейдинг
+            </button>
+            <button onclick="switchTab('news'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg font-medium text-gray-300 hover:bg-dark-border flex items-center gap-2">
+                <i class="fa-solid fa-newspaper w-5"></i> Новости
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- TAB 1: DASHBOARD -->
+        <section id="tab-dashboard" class="space-y-6">
+            
+            <!-- Quick Index Hero Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Card 1: Coke to Chips Standard Index -->
+                <div class="bg-dark-card p-5 rounded-2xl border border-dark-border relative overflow-hidden group hover:border-cola-red/50 transition-all duration-300">
+                    <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i class="fa-solid fa-bottle-droplet text-8xl text-cola-red"></i>
+                    </div>
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Главный Индекс</span>
+                        <span class="px-2 py-0.5 rounded text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20" id="cokeIndexChange">+2.4%</span>
+                    </div>
+                    <div class="text-sm font-medium text-gray-300 mb-1">1 Coca-Cola 0.5л =</div>
+                    <div class="text-2xl sm:text-3xl font-black text-chips-gold mb-2" id="cokeIndexValue">1.35 пачки Lays</div>
+                    <div class="text-xs text-gray-500 flex items-center gap-1">
+                        <i class="fa-solid fa-scale-balanced"></i> Эквивалент: ~189г картофельных чипсов
+                    </div>
+                </div>
+
+                <!-- Card 2: Chips Volatility Index -->
+                <div class="bg-dark-card p-5 rounded-2xl border border-dark-border relative overflow-hidden group hover:border-chips-gold/50 transition-all duration-300">
+                    <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i class="fa-solid fa-box-open text-8xl text-chips-gold"></i>
+                    </div>
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Индекс Волатильности Чипсов</span>
+                        <span class="px-2 py-0.5 rounded text-xs font-bold bg-cola-red/10 text-cola-red border border-cola-red/20" id="chipsVolChange">-0.8%</span>
+                    </div>
+                    <div class="text-sm font-medium text-gray-300 mb-1">100г Pringles =</div>
+                    <div class="text-2xl sm:text-3xl font-black text-cola-red mb-2" id="chipsVolValue">2.1 баночки 0.33л</div>
+                    <div class="text-xs text-gray-500 flex items-center gap-1">
+                        <i class="fa-solid fa-fire text-amber-500"></i> Высшая ликвидность на рынке
+                    </div>
+                </div>
+
+                <!-- Card 3: Snack Parity Rate -->
+                <div class="bg-dark-card p-5 rounded-2xl border border-dark-border relative overflow-hidden group hover:border-purple-500/50 transition-all duration-300">
+                    <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i class="fa-solid fa-coins text-8xl text-purple-500"></i>
+                    </div>
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Паритет Вкуса (Усредненный)</span>
+                        <span class="px-2 py-0.5 rounded text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20">+1.1%</span>
+                    </div>
+                    <div class="text-sm font-medium text-gray-300 mb-1">1 Литр Колы =</div>
+                    <div class="text-2xl sm:text-3xl font-black text-purple-400 mb-2" id="parityValue">280г Снеков</div>
+                    <div class="text-xs text-gray-500 flex items-center gap-1">
+                        <i class="fa-solid fa-globe"></i> На основе расчетов 4 ведущих брендов
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart & Live Orderbook Container -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Interactive Chart (2 cols) -->
+                <div class="lg:col-span-2 bg-dark-card p-5 rounded-2xl border border-dark-border flex flex-col justify-between">
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                            <div>
+                                <h2 class="text-lg font-bold flex items-center gap-2">
+                                    <i class="fa-solid fa-chart-area text-cola-red"></i> Динамика Курса «Кола / Чипсы»
+                                </h2>
+                                <p class="text-xs text-gray-400">Стоимость 0.5л Coca-Cola в граммах снеков</p>
+                            </div>
+                            <!-- Timeframe selector -->
+                            <div class="flex items-center gap-1 bg-dark-bg p-1 rounded-xl border border-dark-border self-start sm:self-auto text-xs">
+                                <button onclick="updateChartTimeframe('1D')" id="tf-1D" class="px-3 py-1 rounded-lg font-medium bg-cola-red text-white">24Ч</button>
+                                <button onclick="updateChartTimeframe('1W')" id="tf-1W" class="px-3 py-1 rounded-lg font-medium text-gray-400 hover:text-white">1Н</button>
+                                <button onclick="updateChartTimeframe('1M')" id="tf-1M" class="px-3 py-1 rounded-lg font-medium text-gray-400 hover:text-white">1М</button>
+                                <button onclick="updateChartTimeframe('1Y')" id="tf-1Y" class="px-3 py-1 rounded-lg font-medium text-gray-400 hover:text-white">1Г</button>
+                            </div>
+                        </div>
+
+                        <!-- Chart Canvas -->
+                        <div class="relative w-full h-64 sm:h-80">
+                            <canvas id="marketChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-dark-border flex flex-wrap items-center justify-between gap-2 text-xs text-gray-400">
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-circle text-[8px] text-green-500 animate-ping"></i> Тороги открыты</span>
+                        <span>Объем торгов за 24ч: <strong class="text-white">45,210 Пачек / 32,100 Банок</strong></span>
+                    </div>
+                </div>
+
+                <!-- Live Market Prices Table / Market Depth -->
+                <div class="bg-dark-card p-5 rounded-2xl border border-dark-border flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold mb-3 flex items-center justify-between">
+                            <span class="flex items-center gap-2">
+                                <i class="fa-solid fa-list-ul text-chips-gold"></i> Котировки Брендов
+                            </span>
+                            <span class="text-xs font-normal text-gray-400">в Коле 0.5L</span>
+                        </h2>
+
+                        <div class="space-y-2" id="brandPricesList">
+                            <!-- Items inserted dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Market Sentiment Meter -->
+                    <div class="mt-4 pt-4 border-t border-dark-border">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-cola-red font-bold">Быки (Кола) 58%</span>
+                            <span class="text-chips-gold font-bold">Медведи (Чипсы) 42%</span>
+                        </div>
+                        <div class="w-full bg-dark-bg h-2 rounded-full overflow-hidden flex">
+                            <div class="bg-cola-red h-full" style="width: 58%"></div>
+                            <div class="bg-chips-gold h-full" style="width: 42%"></div>
+                        </div>
+                        <p class="text-[11px] text-gray-500 text-center mt-2">Настроение рынка: умеренный газированный бычий тренд</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: CALCULATOR / CONVERTER -->
+        <section id="tab-calculator" class="hidden space-y-6">
+            <div class="max-w-3xl mx-auto bg-dark-card p-6 sm:p-8 rounded-2xl border border-dark-border shadow-xl">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-black text-white mb-2 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-calculator text-chips-gold"></i> Калькулятор Обмена Снеков
+                    </h2>
+                    <p class="text-sm text-gray-400">Мгновенный перерасчет любой газировки в хрустящий эквивалент и наоборот</p>
+                </div>
+
+                <!-- Swap Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                    <!-- Left: COLA SIDE -->
+                    <div class="md:col-span-2 bg-dark-bg p-4 rounded-xl border border-dark-border">
+                        <label class="block text-xs font-semibold text-cola-red mb-2 uppercase tracking-wider">
+                            <i class="fa-solid fa-bottle-water mr-1"></i> Газировка (Coca-Cola)
+                        </label>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-[11px] text-gray-400">Объем / Вариант</label>
+                                <select id="calcColaType" onchange="calculateExchange()" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cola-red text-white">
+                                    <option value="0.33">Баночка 0.33 л</option>
+                                    <option value="0.5" selected>Бутылка 0.5 л</option>
+                                    <option value="1.0">Бутылка 1.0 л</option>
+                                    <option value="1.5">Бутылка 1.5 л</option>
+                                    <option value="0.5-zero">Coca-Cola Zero 0.5 л</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-gray-400">Количество (штук)</label>
+                                <input type="number" id="calcColaQty" value="1" min="0.1" step="0.5" oninput="calculateExchange('cola')" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-lg font-bold text-white focus:outline-none focus:border-cola-red">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Middle: SWAP ICON -->
+                    <div class="flex justify-center">
+                        <button onclick="swapCalcSides()" class="w-12 h-12 rounded-full bg-dark-card border border-dark-border hover:border-chips-gold text-chips-gold flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-arrow-right-arrow-left text-lg"></i>
+                        </button>
+                    </div>
+
+                    <!-- Right: CHIPS SIDE -->
+                    <div class="md:col-span-2 bg-dark-bg p-4 rounded-xl border border-dark-border">
+                        <label class="block text-xs font-semibold text-chips-gold mb-2 uppercase tracking-wider">
+                            <i class="fa-solid fa-box-open mr-1"></i> Чипсы / Снеки
+                        </label>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-[11px] text-gray-400">Бренд & Вкус</label>
+                                <select id="calcChipsBrand" onchange="calculateExchange()" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-chips-gold text-white">
+                                    <option value="lays" selected>Lay's (Классика 140g)</option>
+                                    <option value="pringles">Pringles (Туба 165g)</option>
+                                    <option value="doritos">Doritos (Начо 100g)</option>
+                                    <option value="cheetos">Cheetos (Сыр 85g)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-gray-400">Эквивалент в пачках</label>
+                                <input type="number" id="calcChipsQty" value="1.35" min="0" step="0.1" oninput="calculateExchange('chips')" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-lg font-bold text-chips-gold focus:outline-none focus:border-chips-gold">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Result Details Box -->
+                <div class="mt-6 p-4 rounded-xl bg-gradient-to-r from-cola-red/10 via-dark-bg to-chips-gold/10 border border-dark-border text-center">
+                    <div class="text-xs text-gray-400 mb-1">Итоговое соотношение веса и стоимости</div>
+                    <div class="text-lg font-bold text-white" id="calcSummaryText">
+                        1 Бутылка (0.5 л) Колы ≈ 1.35 Пачки Lay's (~189 грамм)
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-info"></i> Расчет основан на текущих биржевых котировках индекса CCI
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: TRADING SIMULATOR -->
+        <section id="tab-trading" class="hidden space-y-6">
+            <!-- Game Header Stats -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-dollar-sign"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-400">Свободные средства</div>
+                        <div class="text-lg font-bold text-white" id="tradeCash">$10,000.00</div>
+                    </div>
+                </div>
+
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-briefcase"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-400">Оценка Портфеля</div>
+                        <div class="text-lg font-bold text-white" id="tradePortfolioVal">$0.00</div>
+                    </div>
+                </div>
+
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-cola-red/10 border border-cola-red/20 text-cola-red flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-400">Прибыль / Убыток</div>
+                        <div class="text-lg font-bold text-green-400" id="tradePnl">+$0.00 (0.0%)</div>
+                    </div>
+                </div>
+
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border flex items-center gap-3">
+                    <button onclick="resetGame()" class="w-full h-full py-2 bg-dark-bg hover:bg-dark-border border border-dark-border rounded-lg text-xs font-semibold text-gray-300 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-left text-cola-red"></i> Сбросить счет
+                    </button>
+                </div>
+            </div>
+
+            <!-- Trading Assets Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="tradingAssetsGrid">
+                <!-- Dynamically populated assets -->
+            </div>
+
+            <!-- User Portfolio Table -->
+            <div class="bg-dark-card p-5 rounded-2xl border border-dark-border">
+                <h3 class="text-base font-bold mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-vault text-chips-gold"></i> Ваши Активные Позиции
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="text-xs text-gray-400 border-b border-dark-border">
+                                <th class="pb-3">Актив</th>
+                                <th class="pb-3">Кол-во</th>
+                                <th class="pb-3">Ср. Цена</th>
+                                <th class="pb-3">Текущая</th>
+                                <th class="pb-3">Стоимость</th>
+                                <th class="pb-3">P&L</th>
+                                <th class="pb-3 text-right">Действие</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portfolioTableBody" class="divide-y divide-dark-border">
+                            <!-- Items -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: NEWS & MARKET ANALYTICS -->
+        <section id="tab-news" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-newspaper text-cola-red"></i> Биржевые Новости & Инсайды
+                    </h2>
+                    <p class="text-xs text-gray-400">Самые важные события, влияющие на котировки чипсов и газировки</p>
+                </div>
+                <button onclick="generateFreshNews()" class="px-4 py-2 bg-cola-red hover:bg-cola-darkred text-white font-medium rounded-xl text-xs transition flex items-center gap-2 shadow-lg">
+                    <i class="fa-solid fa-arrows-rotate"></i> Обновить сводку
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Main News Feed (2 cols) -->
+                <div class="md:col-span-2 space-y-4" id="newsFeed">
+                    <!-- Dynamic news item cards -->
+                </div>
+
+                <!-- Market Analytics Sidebar -->
+                <div class="space-y-4">
+                    <div class="bg-dark-card p-5 rounded-2xl border border-dark-border">
+                        <h3 class="font-bold text-sm mb-3 text-chips-gold flex items-center gap-2">
+                            <i class="fa-solid fa-lightbulb"></i> Аналитический Отчет
+                        </h3>
+                        <p class="text-xs text-gray-300 leading-relaxed mb-3">
+                            Эксперты отмечают, что сезонный рост спроса на Pringles во время киберспортивных турниров может поднять их стоимость относительно Coca-Cola Zero на 12% в ближайшие недели.
+                        </p>
+                        <div class="text-[11px] text-gray-500 border-t border-dark-border pt-2">
+                            Источник: Аналитика Snack & Soda Global Trading
+                        </div>
+                    </div>
+
+                    <div class="bg-dark-card p-5 rounded-2xl border border-dark-border">
+                        <h3 class="font-bold text-sm mb-3 text-cola-red flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Факторы Риска
+                        </h3>
+                        <ul class="text-xs text-gray-400 space-y-2 list-disc list-inside">
+                            <li>Возможный дефицит пузырьков СО2 в Европе</li>
+                            <li>Засуха на картофельных полях Айдахо</li>
+                            <li>Повышение тарифов на жестяные банки 0.33л</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-dark-card border-t border-dark-border py-6 mt-12 text-xs text-gray-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-arrow-trend-up text-cola-red"></i>
+                <span>© 2026 Chips & Cola Stock Exchange Inc. Развлекательный симулятор.</span>
+            </div>
+            <div class="flex items-center gap-4 text-gray-400">
+                <span class="hover:text-white cursor-pointer"><i class="fa-brands fa-telegram"></i> Telegram</span>
+                <span class="hover:text-white cursor-pointer"><i class="fa-brands fa-discord"></i> Discord</span>
+                <span class="hover:text-white cursor-pointer"><i class="fa-brands fa-github"></i> GitHub</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- AUDIO TOGGLE / SOUND EFFECT HELPER -->
+    <script>
+        // --- AUDIO SYSTEM (Tone.js) ---
+        let soundEnabled = true;
+
+        function playSound(type) {
+            if (!soundEnabled || typeof Tone === 'undefined') return;
+            try {
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                const synth = new Tone.Synth().toDestination();
+                if (type === 'buy') {
+                    synth.triggerAttackRelease("C5", "8n");
+                } else if (type === 'sell') {
+                    synth.triggerAttackRelease("G4", "8n");
+                } else if (type === 'click') {
+                    synth.triggerAttackRelease("E5", "16n");
+                }
+            } catch(e) {
+                // Audio fallback silence
+            }
+        }
+
+        // --- APP STATE ---
+        const state = {
+            currentTab: 'dashboard',
+            balance: 10000.00,
+            portfolio: {}, // { symbol: { qty, avgPrice } }
+            marketData: {
+                cokeStandard: 1.35, // 1 Coca-Cola 0.5L in Lay's packs
+                timeframe: '1D',
+            },
+            assets: [
+                { id: 'lays', name: "Lay's Классика", symbol: 'LAYS', price: 2.50, change: 1.8, icon: 'fa-box', color: 'text-chips-gold' },
+                { id: 'pringles', name: 'Pringles Original', symbol: 'PRNG', price: 4.20, change: -0.5, icon: 'fa-database', color: 'text-red-400' },
+                { id: 'doritos', name: 'Doritos Начо', symbol: 'DORT', price: 3.10, change: 3.4, icon: 'fa-play', color: 'text-amber-500' },
+                { id: 'cheetos', name: 'Cheetos Сыр', symbol: 'CHTS', price: 1.80, change: -1.2, icon: 'fa-paw', color: 'text-orange-400' },
+                { id: 'coke05', name: 'Coca-Cola 0.5L', symbol: 'COKE', price: 3.38, change: 2.1, icon: 'fa-bottle-water', color: 'text-cola-red' },
+                { id: 'coke033', name: 'Coca-Cola 0.33L', symbol: 'COKE33', price: 2.00, change: 0.0, icon: 'fa-wine-can', color: 'text-red-500' },
+                { id: 'cokezero', name: 'Coca-Cola Zero 0.5L', symbol: 'ZERO', price: 3.50, change: -2.3, icon: 'fa-bolt', color: 'text-gray-300' },
+            ],
+            news: [
+                { id: 1, title: "Неурожай картофеля взвинтил курс Doritos к Coke Zero!", date: "10 минут назад", tag: "Срочно", impact: "bullish", text: "В результате засухи мировые запасы кудрявого картофеля снизились. Трейдеры переходят на кукурузные начос." },
+                { id: 2, title: "Дефицит газа вызвал дефицит пузырьков в Coca-Cola!", date: "1 час назад", tag: "Аналитика", impact: "bearish", text: "Эксперты предупреждают: слабогазированные партии колы могут котироваться ниже обычных на 5-7%." },
+                { id: 3, title: "Pringles анонсировали чипсы со вкусом Coca-Cola!", date: "3 часа назад", tag: "Слияния", impact: "bullish", text: "Инвесторы называют это величайшим экономическим союзом XXI века. Акции обеих компаний растут." },
+                { id: 4, title: "Киберспортивный турнир по Dota 2 подбросил спрос на Cheetos", date: "5 часов назад", tag: "Рынок", impact: "bullish", text: "Зафиксированы рекордные объемы закупок снеков прямо во время финалов." }
+            ]
+        };
+
+        let chartInstance = null;
+
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initTicker();
+            initChart();
+            renderBrandPrices();
+            renderTradingAssets();
+            renderPortfolio();
+            renderNews();
+            calculateExchange();
+
+            // Dynamic Price Fluctuation Simulation Loop
+            setInterval(simulatePriceFluctuations, 4000);
+        });
+
+        // --- NAVIGATION ---
+        function switchTab(tabId) {
+            playSound('click');
+            state.currentTab = tabId;
+
+            ['dashboard', 'calculator', 'trading', 'news'].forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                const nav = document.getElementById(`nav-${t}`);
+                if (t === tabId) {
+                    el.classList.remove('hidden');
+                    if (nav) {
+                        nav.className = "px-4 py-2 rounded-lg font-medium transition-all duration-200 bg-cola-red text-white shadow-md";
+                    }
+                } else {
+                    el.classList.add('hidden');
+                    if (nav) {
+                        nav.className = "px-4 py-2 rounded-lg font-medium transition-all duration-200 text-gray-400 hover:text-white hover:bg-dark-border";
+                    }
+                }
+            });
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // --- TICKER BAR ---
+        function initTicker() {
+            const container = document.getElementById('tickerContent');
+            const tickerItems = state.assets.map(a => {
+                const isPos = a.change >= 0;
+                return `
+                    <div class="inline-flex items-center gap-2">
+                        <span class="font-bold text-gray-300">${a.symbol}</span>
+                        <span class="text-white">$${a.price.toFixed(2)}</span>
+                        <span class="${isPos ? 'text-green-400' : 'text-cola-red'} flex items-center font-semibold">
+                            <i class="fa-solid fa-caret-${isPos ? 'up' : 'down'} mr-0.5"></i>${Math.abs(a.change)}%
+                        </span>
+                    </div>
+                `;
+            }).join('<span class="text-gray-600">|</span>');
+
+            // Duplicate ticker content to make smooth infinite CSS loop
+            container.innerHTML = tickerItems + '<span class="text-gray-600">|</span>' + tickerItems;
+        }
+
+        // --- BRAND PRICES LIST ---
+        function renderBrandPrices() {
+            const container = document.getElementById('brandPricesList');
+            const cokePrice = state.assets.find(a => a.id === 'coke05').price;
+
+            container.innerHTML = state.assets.filter(a => a.id !== 'coke05').map(a => {
+                const ratio = (cokePrice / a.price).toFixed(2);
+                const isPos = a.change >= 0;
+
+                return `
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-dark-bg border border-dark-border/60 hover:border-dark-border transition">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-dark-card border border-dark-border flex items-center justify-center ${a.color}">
+                                <i class="fa-solid ${a.icon}"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-white">${a.name}</div>
+                                <div class="text-[10px] text-gray-400">${a.symbol}</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs font-black text-chips-gold">${ratio} шт / Кола</div>
+                            <div class="text-[10px] ${isPos ? 'text-green-400' : 'text-cola-red'} font-semibold">
+                                ${isPos ? '+' : ''}${a.change}%
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- CHART.JS MARKET CHART ---
+        function initChart() {
+            const ctx = document.getElementById('marketChart').getContext('2d');
+            
+            // Gradient fill for Coca-Cola Red
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(228, 30, 43, 0.4)');
+            gradient.addColorStop(1, 'rgba(228, 30, 43, 0.0)');
+
+            const dataPoints = [170, 172, 168, 175, 180, 178, 182, 185, 183, 189];
+            const labels = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', 'Сейчас'];
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Грамм Чипсов за 1L Колы',
+                        data: dataPoints,
+                        borderColor: '#E41E2B',
+                        borderWidth: 3,
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#FFC72C',
+                        pointRadius: 4,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#181820',
+                            titleColor: '#FFC72C',
+                            bodyColor: '#FFFFFF',
+                            borderColor: '#2A2A38',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: (context) => `Курс: ${context.parsed.y} грамм / 1L`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(42, 42, 56, 0.5)' },
+                            ticks: { color: '#9CA3AF', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(42, 42, 56, 0.5)' },
+                            ticks: { color: '#9CA3AF', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChartTimeframe(tf) {
+            playSound('click');
+            state.marketData.timeframe = tf;
+
+            ['1D', '1W', '1M', '1Y'].forEach(t => {
+                const btn = document.getElementById(`tf-${t}`);
+                if (t === tf) {
+                    btn.className = "px-3 py-1 rounded-lg font-medium bg-cola-red text-white";
+                } else {
+                    btn.className = "px-3 py-1 rounded-lg font-medium text-gray-400 hover:text-white";
+                }
+            });
+
+            // Mock data generator for timeframes
+            let newLabels = [];
+            let newData = [];
+
+            if (tf === '1D') {
+                newLabels = ['09:00', '11:00', '13:00', '15:00', '17:00', 'Сейчас'];
+                newData = [172, 178, 175, 182, 180, 189];
+            } else if (tf === '1W') {
+                newLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+                newData = [160, 165, 170, 168, 175, 182, 189];
+            } else if (tf === '1M') {
+                newLabels = ['Нед 1', 'Нед 2', 'Нед 3', 'Нед 4'];
+                newData = [145, 158, 172, 189];
+            } else if (tf === '1Y') {
+                newLabels = ['Кв1', 'Кв2', 'Кв3', 'Кв4'];
+                newData = [120, 140, 165, 189];
+            }
+
+            chartInstance.data.labels = newLabels;
+            chartInstance.data.datasets[0].data = newData;
+            chartInstance.update();
+        }
+
+        // --- CALCULATOR SYSTEM ---
+        function calculateExchange(changedSource = 'cola') {
+            const colaType = document.getElementById('calcColaType').value;
+            const chipsBrand = document.getElementById('calcChipsBrand').value;
+
+            // Base volumes and weights
+            let colaLiters = parseFloat(colaType);
+            if (colaType === '0.5-zero') colaLiters = 0.5;
+
+            const chipsSpecs = {
+                lays: { packWeight: 140, pricePerPack: 2.50 },
+                pringles: { packWeight: 165, pricePerPack: 4.20 },
+                doritos: { packWeight: 100, pricePerPack: 3.10 },
+                cheetos: { packWeight: 85, pricePerPack: 1.80 }
+            };
+
+            const selectedChips = chipsSpecs[chipsBrand];
+            // 1 Liter Coke ~ $6.76 base equivalent
+            const colaPriceEquivalent = colaLiters * 6.76;
+
+            if (changedSource === 'cola') {
+                const colaQty = parseFloat(document.getElementById('calcColaQty').value) || 0;
+                const totalColaVal = colaQty * colaPriceEquivalent;
+                const requiredChipsPacks = (totalColaVal / selectedChips.pricePerPack).toFixed(2);
+                document.getElementById('calcChipsQty').value = requiredChipsPacks;
+            } else {
+                const chipsQty = parseFloat(document.getElementById('calcChipsQty').value) || 0;
+                const totalChipsVal = chipsQty * selectedChips.pricePerPack;
+                const requiredColaQty = (totalChipsVal / colaPriceEquivalent).toFixed(2);
+                document.getElementById('calcColaQty').value = requiredColaQty;
+            }
+
+            // Summary Text
+            const cQty = document.getElementById('calcColaQty').value;
+            const chQty = document.getElementById('calcChipsQty').value;
+            const totalGrams = Math.round(chQty * selectedChips.packWeight);
+
+            document.getElementById('calcSummaryText').innerText = 
+                `${cQty} шт. Колы (${colaType}L) ≈ ${chQty} пач. бренда (${totalGrams} грамм)`;
+        }
+
+        function swapCalcSides() {
+            playSound('click');
+            const cInput = document.getElementById('calcColaQty');
+            const chInput = document.getElementById('calcChipsQty');
+            const temp = cInput.value;
+            cInput.value = chInput.value;
+            chInput.value = temp;
+            calculateExchange('cola');
+        }
+
+        // --- TRADING SIMULATOR ---
+        function renderTradingAssets() {
+            const container = document.getElementById('tradingAssetsGrid');
+            container.innerHTML = state.assets.map(a => {
+                const isPos = a.change >= 0;
+                return `
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border flex flex-col justify-between hover:border-dark-border/80 transition">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-xs font-bold ${a.color} flex items-center gap-1.5">
+                                    <i class="fa-solid ${a.icon}"></i> ${a.symbol}
+                                </span>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded ${isPos ? 'bg-green-500/10 text-green-400' : 'bg-cola-red/10 text-cola-red'} font-bold">
+                                    ${isPos ? '+' : ''}${a.change}%
+                                </span>
+                            </div>
+                            <div class="text-sm font-medium text-gray-300">${a.name}</div>
+                            <div class="text-xl font-black text-white my-1">$${a.price.toFixed(2)}</div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-dark-border">
+                            <button onclick="buyAsset('${a.id}')" class="py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg text-xs font-bold transition">
+                                Купить
+                            </button>
+                            <button onclick="sellAsset('${a.id}')" class="py-1.5 bg-cola-red hover:bg-cola-darkred text-white rounded-lg text-xs font-bold transition">
+                                Продать
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function buyAsset(assetId) {
+            const asset = state.assets.find(a => a.id === assetId);
+            if (state.balance < asset.price) {
+                alert("Недостаточно средств на балансе!");
+                return;
+            }
+
+            playSound('buy');
+            state.balance -= asset.price;
+
+            if (!state.portfolio[assetId]) {
+                state.portfolio[assetId] = { qty: 0, avgPrice: 0 };
+            }
+
+            const current = state.portfolio[assetId];
+            const newTotalQty = current.qty + 1;
+            const newAvgPrice = ((current.qty * current.avgPrice) + asset.price) / newTotalQty;
+
+            state.portfolio[assetId] = { qty: newTotalQty, avgPrice: newAvgPrice };
+
+            updateTradingUI();
+        }
+
+        function sellAsset(assetId) {
+            const asset = state.assets.find(a => a.id === assetId);
+            if (!state.portfolio[assetId] || state.portfolio[assetId].qty <= 0) {
+                alert("У вас нет этого актива для продажи!");
+                return;
+            }
+
+            playSound('sell');
+            state.balance += asset.price;
+            state.portfolio[assetId].qty -= 1;
+
+            if (state.portfolio[assetId].qty === 0) {
+                delete state.portfolio[assetId];
+            }
+
+            updateTradingUI();
+        }
+
+        function updateTradingUI() {
+            // Update Balance Display
+            document.getElementById('userBalance').innerText = `$${state.balance.toFixed(2)}`;
+            document.getElementById('tradeCash').innerText = `$${state.balance.toFixed(2)}`;
+
+            // Portfolio calculations
+            let totalPortfolioVal = 0;
+            let totalCost = 0;
+
+            Object.keys(state.portfolio).forEach(id => {
+                const pos = state.portfolio[id];
+                const asset = state.assets.find(a => a.id === id);
+                if (asset && pos.qty > 0) {
+                    totalPortfolioVal += pos.qty * asset.price;
+                    totalCost += pos.qty * pos.avgPrice;
+                }
+            });
+
+            const pnl = totalPortfolioVal - totalCost;
+            const pnlPercent = totalCost > 0 ? (pnl / totalCost) * 100 : 0;
+
+            document.getElementById('tradePortfolioVal').innerText = `$${totalPortfolioVal.toFixed(2)}`;
+            const pnlEl = document.getElementById('tradePnl');
+            pnlEl.innerText = `${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)} (${pnlPercent.toFixed(1)}%)`;
+            pnlEl.className = `text-lg font-bold ${pnl >= 0 ? 'text-green-400' : 'text-cola-red'}`;
+
+            renderPortfolio();
+        }
+
+        function renderPortfolio() {
+            const tbody = document.getElementById('portfolioTableBody');
+            const keys = Object.keys(state.portfolio);
+
+            if (keys.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-6 text-center text-gray-500 text-xs">
+                            У вас пока нет открытых позиций. Купите акции чипсов или фьючерсы на колу выше!
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = keys.map(id => {
+                const pos = state.portfolio[id];
+                const asset = state.assets.find(a => a.id === id);
+                if (!asset || pos.qty <= 0) return '';
+
+                const currentVal = pos.qty * asset.price;
+                const cost = pos.qty * pos.avgPrice;
+                const profit = currentVal - cost;
+
+                return `
+                    <tr class="hover:bg-dark-bg/50">
+                        <td class="py-3 font-bold text-white">${asset.name} (${asset.symbol})</td>
+                        <td class="py-3">${pos.qty}</td>
+                        <td class="py-3 text-gray-400">$${pos.avgPrice.toFixed(2)}</td>
+                        <td class="py-3 text-white font-semibold">$${asset.price.toFixed(2)}</td>
+                        <td class="py-3 font-bold">$${currentVal.toFixed(2)}</td>
+                        <td class="py-3 font-bold ${profit >= 0 ? 'text-green-400' : 'text-cola-red'}">
+                            ${profit >= 0 ? '+' : ''}$${profit.toFixed(2)}
+                        </td>
+                        <td class="py-3 text-right">
+                            <button onclick="sellAsset('${id}')" class="px-2.5 py-1 bg-cola-red hover:bg-cola-darkred text-white text-xs font-bold rounded">
+                                Продать
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function resetGame() {
+            if (confirm("Вы уверены, что хотите сбросить баланс до $10,000?")) {
+                state.balance = 10000.00;
+                state.portfolio = {};
+                updateTradingUI();
+            }
+        }
+
+        // --- SIMULATE REALTIME MARKET MOVEMENTS ---
+        function simulatePriceFluctuations() {
+            state.assets.forEach(asset => {
+                // Random walk -2% to +2%
+                const deltaPercent = (Math.random() * 4 - 2);
+                asset.price = Math.max(0.5, asset.price * (1 + deltaPercent / 100));
+                asset.change = parseFloat(deltaPercent.toFixed(1));
+            });
+
+            // Update main indexes
+            const coke = state.assets.find(a => a.id === 'coke05').price;
+            const lays = state.assets.find(a => a.id === 'lays').price;
+            state.marketData.cokeStandard = (coke / lays).toFixed(2);
+
+            document.getElementById('cokeIndexValue').innerText = `${state.marketData.cokeStandard} пачки Lays`;
+
+            // UI updates
+            initTicker();
+            renderBrandPrices();
+            renderTradingAssets();
+            updateTradingUI();
+        }
+
+        // --- NEWS FEED SYSTEM ---
+        function renderNews() {
+            const container = document.getElementById('newsFeed');
+            container.innerHTML = state.news.map(n => `
+                <div class="bg-dark-card p-5 rounded-2xl border border-dark-border hover:border-dark-border/80 transition">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${n.impact === 'bullish' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-cola-red/10 text-cola-red border border-cola-red/20'}">
+                            ${n.tag}
+                        </span>
+                        <span class="text-[11px] text-gray-500">${n.date}</span>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-2">${n.title}</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed">${n.text}</p>
+                </div>
+            `).join('');
+        }
+
+        function generateFreshNews() {
+            playSound('click');
+            const titles = [
+                "Илон Маск написал твит со словом 'Pringles': курс подскочил на 15%!",
+                "В Японских автоматах запустили фьючерсы на прозрачную Колу.",
+                "Секретный ингредиент Lay's случайно слили на биржевые форумы.",
+                "Ученые доказали: газ в Коле улучшает скорость принятия решений трейдеров."
+            ];
+
+            const randomTitle = titles[Math.floor(Math.random() * titles.length)];
+            const newArticle = {
+                id: Date.now(),
+                title: randomTitle,
+                date: "Только что",
+                tag: "Эксклюзив",
+                impact: Math.random() > 0.5 ? "bullish" : "bearish",
+                text: "Биржевые аналитики рекомендуют держать позицию и не поддаваться панике во время обеденного перерыва."
+            };
+
+            state.news.unshift(newArticle);
+            renderNews();
+        }
+    </script>
+</body>
+</html>
